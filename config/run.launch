@@ -1,0 +1,34 @@
+<launch>
+
+    <arg name="lio_sam_path" default="/home/whh/lio-sam"/>
+    <arg name="pro_name" default="lio_sam"/>
+    <rosparam file="$(arg lio_sam_path)/config/params.yaml" command="load" />
+
+
+
+    <node pkg="$(arg pro_name)" type="$(arg pro_name)_imuPreintegration"   name="imuPreintegration"     />
+    <node pkg="$(arg pro_name)" type="$(arg pro_name)_imageProjection"     name="imageProjection"       />
+    <node pkg="$(arg pro_name)" type="$(arg pro_name)_featureExtraction"   name="featureExtraction"     />
+    <node pkg="$(arg pro_name)" type="$(arg pro_name)_mapOptmization"      name="mapOptmization"        />
+
+
+
+    <param name="robot_description" command="xacro $(arg lio_sam_path)/config/robot.urdf.xacro" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true"/>
+
+
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_gps" respawn="true">
+        <remap from="odometry/filtered" to="odometry/navsat" />
+    </node>
+    <node pkg="robot_localization" type="navsat_transform_node" name="navsat" respawn="true">
+        <remap from="imu/data" to="imu_correct" />
+        <remap from="gps/fix" to="gps/fix" />
+        <remap from="odometry/filtered" to="odometry/navsat" />
+    </node>
+
+
+
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg lio_sam_path)/config/rviz.rviz" />
+
+</launch>
